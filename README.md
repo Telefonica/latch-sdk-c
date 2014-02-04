@@ -15,7 +15,7 @@
 #### USING THE SDK IN C ####
 
 1. Include "latch.h" file.
-	#include "latch.h"
+	include "latch.h"
 
 2. Set the "Application ID" and "Secret" previously obtained.
 	init("APP_ID_HERE", "APP_SECRET_HERE");
