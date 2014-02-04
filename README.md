@@ -26,7 +26,6 @@ init("APP_ID_HERE", "APP_SECRET_HERE");
 
 * Optional settings:
 ```
-setHost("LATCH_HOST_HERE")
 setProxy("PROXY_ADDRESS_HERE")
 ```
 
