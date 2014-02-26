@@ -237,6 +237,6 @@ char* unpair(const char* pAccountId) {
 	strcpy(url, API_UNPAIR_URL);
 	strcat(url, "/");
 	strcat(url, pAccountId);
-	printf("%s\n\n", url);
+	//printf("%s\n\n", url);
 	return http_get_proxy(url);
 }
