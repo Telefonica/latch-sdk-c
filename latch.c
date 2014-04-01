@@ -62,9 +62,9 @@ char* base64encode(const unsigned char *input, int length) {
 	BIO_flush(b64);
 	BIO_get_mem_ptr(b64, &bptr);
 
-	char *buff = (char *)malloc(bptr->length + 1);
-	memcpy(buff, bptr->data, bptr->length);
-	buff[bptr->length] = 0;
+	char *buff = (char *)malloc(bptr->length);
+	memcpy(buff, bptr->data, bptr->length - 1);
+	buff[bptr->length - 1] = 0;
 
 	BIO_free_all(b64);
 
@@ -118,17 +118,17 @@ void authenticationHeaders(const char* pHTTPMethod, const char* pQueryString, ch
 	tm_info = localtime(&timer);
 	strftime(utc, 20, UTC_STRING_FORMAT, tm_info);
 
-	len = strlen(pHTTPMethod) + strlen(utc) + 4 + strlen(pQueryString);
+	len = strlen(pHTTPMethod) + strlen(utc) + strlen(pQueryString) + 4;
 	stringToSign = malloc(len);
 	snprintf(stringToSign, len, "%s\n%s\n\n%s", pHTTPMethod, utc, pQueryString);
 
 	b64hash = sign_data(SecretKey, stringToSign);
 
-	len = strlen(AUTHORIZATION_HEADER_NAME) + strlen(AUTHORIZATION_METHOD) + strlen(AppId) + strlen(b64hash) + 4;
+	len = strlen(AUTHORIZATION_HEADER_NAME) + strlen(AUTHORIZATION_METHOD) + strlen(AppId) + strlen(b64hash) + 5;
 	authHeader = malloc(len);
 	snprintf(authHeader, len, "%s: %s %s %s", AUTHORIZATION_HEADER_NAME, AUTHORIZATION_METHOD, AppId, b64hash);
 
-	len = strlen(DATE_HEADER_NAME) + 3 + strlen(utc);
+	len = strlen(DATE_HEADER_NAME) + strlen(utc) + 3;
 	dateHeader = malloc(len);
 	snprintf(dateHeader, len, "%s: %s", DATE_HEADER_NAME, utc);
 
