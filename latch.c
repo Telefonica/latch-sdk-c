@@ -94,6 +94,7 @@ char* sign_data(const char* pSecretKey, const char* pData) {
 	return base64encode(digest, 20);
 }
 
+int nosignal = 0;
 int timeout = 2;
 const char* AppId;
 const char* SecretKey;
@@ -119,6 +120,14 @@ void setProxy(const char* pProxy){
 void setTimeout(const int iTimeout)
 {
     timeout = iTimeout;
+}
+
+/*
+ * If called with iNoSignal 1, CURLOPT_NOSIGNAL will be set to 1
+ */
+void setNoSignal(const int iNoSignal)
+{
+    nosignal = iNoSignal;
 }
 
 void authenticationHeaders(const char* pHTTPMethod, const char* pQueryString, char* pHeaders[]) {
@@ -212,6 +221,14 @@ char* http_get_proxy(const char* pUrl) {
 
 	// error message when curl_easy_perform return non-zero
 	curl_easy_setopt(pCurl, CURLOPT_ERRORBUFFER, error_message);
+
+	// Optional if setNoSignal(1)
+	// Avoid crashing if multithread, DNS timeout and libcurl < 7.32.0
+	// Blocks with standard resolver (doesn't apply the timeout)
+
+	if (nosignal == 1) {
+	    curl_easy_setopt(pCurl, CURLOPT_NOSIGNAL, 1);
+	}
 
 	// synchronous, but we don't really care
 	res = curl_easy_perform(pCurl);

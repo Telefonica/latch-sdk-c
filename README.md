@@ -30,6 +30,11 @@ setProxy("PROXY_ADDRESS_HERE");
 setTimeout(TIMEOUT_HERE);
 ```
 
+* If libcurl < 7.32.0, CURLOPT_SETNOSIGNAL must be set to 1 in multithreaded applications. This causes that the timeout doesn't apply to DNS queries made with the standard resolver.
+```
+setNoSignal(1);
+```
+
 * Call to Latch Server. Pairing will return an account id that you should store for future api calls
 ```
 response = pair("PAIRING_CODE_HERE");
