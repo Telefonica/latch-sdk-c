@@ -47,6 +47,11 @@
 void init(const char*, const char*);
 void setHost(const char*);
 void setProxy(const char*);
+void setTimeout(const int);
+void setNoSignal(const int);
+void setTLSCAFile(const char*);
+void setTLSCAPath(const char*);
+void setTLSCRLFile(const char*);
 char* pairWithId(const char*);
 char* pair(const char*);
 char* status(const char*);
