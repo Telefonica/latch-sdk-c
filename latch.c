@@ -111,6 +111,7 @@ void setProxy(const char* pProxy){
 }
 
 void authenticationHeaders(const char* pHTTPMethod, const char* pQueryString, char* pHeaders[]) {
+
 	char* authHeader, *dateHeader, *stringToSign, *b64hash;
 	char utc[20];
 	time_t timer;
@@ -137,6 +138,10 @@ void authenticationHeaders(const char* pHTTPMethod, const char* pQueryString, ch
 
 	pHeaders[0] = authHeader;
 	pHeaders[1] = dateHeader;
+
+    free(stringToSign);
+    free(b64hash);
+
 }
 
 /*
