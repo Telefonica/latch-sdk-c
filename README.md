@@ -30,7 +30,7 @@ setProxy("PROXY_ADDRESS_HERE");
 setTimeout(TIMEOUT_HERE);
 ```
 
-* If libcurl < 7.32.0, CURLOPT_SETNOSIGNAL must be set to 1 in multithreaded applications. This causes that the timeout doesn't apply to DNS queries made with the standard resolver.
+* If libcurl < 7.32.0, CURLOPT_NOSIGNAL must be set to 1 in multithreaded applications. This causes that the timeout doesn't apply to DNS queries made with the standard resolver.
 ```
 setNoSignal(1);
 ```
