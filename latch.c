@@ -17,8 +17,9 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-
 #include "latch.h"
+
+#define ACCOUNT_ID_MAX_LENGTH 64
 
 /*
  * Function to handle stuff from HTTP response.
@@ -199,11 +200,22 @@ char* http_get_proxy(const char* pUrl) {
 
 
 char* pairWithId(const char* pAccountId) {
-	char* url = malloc(strlen(API_PAIR_WITH_ID_URL) + strlen(pAccountId) + 2);
-	strcpy(url, API_PAIR_WITH_ID_URL);
-	strcat(url, "/");
-	strcat(url, pAccountId);
-	return http_get_proxy(url);
+
+    char *response = NULL;
+    char *url = NULL;
+
+    if ((url = malloc((strlen(API_PAIR_WITH_ID_URL) + 1 + strnlen(pAccountId, ACCOUNT_ID_MAX_LENGTH) + 1)*sizeof(char))) == NULL) {
+        return NULL;
+    }
+
+    snprintf(url, strlen(API_PAIR_WITH_ID_URL) + 1 + strnlen(pAccountId, ACCOUNT_ID_MAX_LENGTH) + 1, "%s/%s", API_PAIR_WITH_ID_URL, pAccountId);
+
+    response = http_get_proxy(url);
+
+    free(url);
+
+    return response;
+
 }
 
 char* pair(const char* pToken) {
