@@ -23,6 +23,11 @@
 #define OPERATION_ID_MAX_LENGTH 20
 #define TOKEN_MAX_LENGTH 6
 
+typedef struct curl_response_buffer {
+  char *buffer;
+  size_t size;
+} curl_response_buffer;
+
 /*
  * Function to handle stuff from HTTP response.
  * 
@@ -33,17 +38,18 @@
  * @return Number of bytes actually handled. If different from len * size, curl will throw an error
  */
 static int writeFn(void* buf, size_t len, size_t size, void* userdata) {
-	char *response_ptr =  (char *)userdata;	
-	size_t needed = size * len;
-	
-	if (needed > LATCH_BUFFER_SIZE - 1) {
-		/* Error, we cannot allocate so much info, but we will allocate the info that it fits */
-		memcpy(response_ptr, buf, LATCH_BUFFER_SIZE - 1);
-	} else {
-		memcpy(response_ptr, buf, needed);
-	}
 
-	return needed;
+    size_t realsize = len * size;
+    curl_response_buffer *response = (curl_response_buffer*)userdata;
+
+    response->buffer = realloc(response->buffer, response->size + realsize + 1);
+
+    memcpy(&(response->buffer[response->size]), buf, realsize);
+    response->size += realsize;
+    response->buffer[response->size] = '\0';
+
+    return realsize;
+
 }
 
 /*
@@ -151,7 +157,7 @@ void authenticationHeaders(const char* pHTTPMethod, const char* pQueryString, ch
 char* http_get_proxy(const char* pUrl) {
 
 	char* headers[2];
-	char* response = malloc(LATCH_BUFFER_SIZE);
+	curl_response_buffer response;
 	char error_message[CURL_ERROR_SIZE];
 	CURL* pCurl = curl_easy_init();
 	int res = -1;
@@ -163,6 +169,10 @@ char* http_get_proxy(const char* pUrl) {
 	if (!pCurl) {
 		return NULL;
 	}
+
+    response.buffer = malloc(1*sizeof(char));
+    response.size = 0;
+    response.buffer[response.size] = '\0';
 
 	authenticationHeaders("GET", pUrl, headers);
 	for (i=0; i<(sizeof(headers)/sizeof(char*)); i++) {
@@ -179,7 +189,7 @@ char* http_get_proxy(const char* pUrl) {
 	curl_easy_setopt(pCurl, CURLOPT_URL, hostAndUrl);
 	curl_easy_setopt(pCurl, CURLOPT_HTTPHEADER, chunk);
 	curl_easy_setopt(pCurl, CURLOPT_WRITEFUNCTION, writeFn);
-	curl_easy_setopt(pCurl, CURLOPT_WRITEDATA, response);
+	curl_easy_setopt(pCurl, CURLOPT_WRITEDATA, &response);
 	curl_easy_setopt(pCurl, CURLOPT_NOPROGRESS, 1); // we don't care about progress
 	curl_easy_setopt(pCurl, CURLOPT_FAILONERROR, 1);
 
@@ -207,7 +217,13 @@ char* http_get_proxy(const char* pUrl) {
     curl_slist_free_all(chunk);
     free(hostAndUrl);
 
-	return response;
+    if (res != CURLE_OK) {
+        free(response.buffer);
+        return NULL;
+    }
+    else {
+        return response.buffer;
+    }
 
 }
 
