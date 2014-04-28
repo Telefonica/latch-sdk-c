@@ -26,14 +26,15 @@ init("APP_ID_HERE", "APP_SECRET_HERE");
 
 * Optional settings:
 ```
-setProxy("PROXY_ADDRESS_HERE")
+setProxy("PROXY_ADDRESS_HERE");
+setTimeout(TIMEOUT_HERE);
 ```
 
 * Call to Latch Server. Pairing will return an account id that you should store for future api calls
 ```
-response = pair("PAIRING_CODE_HERE")
-response = status("ACCOUNT_ID_HERE")
-response = unpair("ACCOUNT_ID_HERE")
+response = pair("PAIRING_CODE_HERE");
+response = status("ACCOUNT_ID_HERE");
+response = unpair("ACCOUNT_ID_HERE");
 ```
 
 * Compile the code with: -lcurl -lcrypto -lssl -ldl

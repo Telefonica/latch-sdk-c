@@ -94,7 +94,7 @@ char* sign_data(const char* pSecretKey, const char* pData) {
 	return base64encode(digest, 20);
 }
 
-
+int timeout = 2;
 const char* AppId;
 const char* SecretKey;
 const char* Host = "https://latch.elevenpaths.com";
@@ -114,6 +114,11 @@ void setHost(const char* pHost){
  */
 void setProxy(const char* pProxy){
 	Proxy = pProxy;
+}
+
+void setTimeout(const int iTimeout)
+{
+    timeout = iTimeout;
 }
 
 void authenticationHeaders(const char* pHTTPMethod, const char* pQueryString, char* pHeaders[]) {
@@ -162,7 +167,6 @@ char* http_get_proxy(const char* pUrl) {
 	CURL* pCurl = curl_easy_init();
 	int res = -1;
 	int i = 0;
-	int timeOut = 1;	
 	struct curl_slist* chunk = NULL;
 	char* hostAndUrl;
 	
@@ -194,12 +198,11 @@ char* http_get_proxy(const char* pUrl) {
 	curl_easy_setopt(pCurl, CURLOPT_FAILONERROR, 1);
 
 	if(Proxy != NULL){
-		curl_easy_setopt(pCurl, CURLOPT_PROXY, Proxy); 
-		timeOut = 2; 
+		curl_easy_setopt(pCurl, CURLOPT_PROXY, Proxy);
 	}
 
 	// we don't want to leave our user waiting at the login prompt forever
-	curl_easy_setopt(pCurl, CURLOPT_TIMEOUT, timeOut);
+	curl_easy_setopt(pCurl, CURLOPT_TIMEOUT, timeout);
 
 	// SSL needs 16k of random stuff. We'll give it some space in RAM.
 	curl_easy_setopt(pCurl, CURLOPT_RANDOM_FILE, "/dev/urandom");
