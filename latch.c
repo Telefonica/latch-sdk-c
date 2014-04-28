@@ -100,6 +100,8 @@ const char* AppId;
 const char* SecretKey;
 const char* Host = "https://latch.elevenpaths.com";
 const char* Proxy;
+const char* tlsCAFile = NULL;
+const char* tlsCAPath = NULL;
 
 void init(const char* pAppId, const char* pSecretKey) {
 	AppId = pAppId;
@@ -128,6 +130,16 @@ void setTimeout(const int iTimeout)
 void setNoSignal(const int iNoSignal)
 {
     nosignal = iNoSignal;
+}
+
+void setTLSCAFile(const char* pTLSCAFile)
+{
+    tlsCAFile = pTLSCAFile;
+}
+
+void setTLSCAPath(const char* pTLSCAPath)
+{
+    tlsCAPath = pTLSCAPath;
 }
 
 void authenticationHeaders(const char* pHTTPMethod, const char* pQueryString, char* pHeaders[]) {
@@ -215,7 +227,7 @@ char* http_get_proxy(const char* pUrl) {
 
 	// SSL needs 16k of random stuff. We'll give it some space in RAM.
 	curl_easy_setopt(pCurl, CURLOPT_RANDOM_FILE, "/dev/urandom");
-	curl_easy_setopt(pCurl, CURLOPT_SSL_VERIFYPEER, 0);
+	curl_easy_setopt(pCurl, CURLOPT_SSL_VERIFYPEER, 1);
 	curl_easy_setopt(pCurl, CURLOPT_SSL_VERIFYHOST, 2);
 	curl_easy_setopt(pCurl, CURLOPT_USE_SSL, CURLUSESSL_ALL);
 
@@ -228,6 +240,17 @@ char* http_get_proxy(const char* pUrl) {
 
 	if (nosignal == 1) {
 	    curl_easy_setopt(pCurl, CURLOPT_NOSIGNAL, 1);
+	}
+
+	if (tlsCAFile != NULL) {
+	    curl_easy_setopt(pCurl, CURLOPT_CAINFO, tlsCAFile);
+	    curl_easy_setopt(pCurl, CURLOPT_CAPATH, NULL);
+	}
+	else {
+	    if (tlsCAPath != NULL) {
+	        curl_easy_setopt(pCurl, CURLOPT_CAINFO, NULL);
+	        curl_easy_setopt(pCurl, CURLOPT_CAPATH, tlsCAPath);
+	    }
 	}
 
 	// synchronous, but we don't really care

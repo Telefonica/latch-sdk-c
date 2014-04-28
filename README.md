@@ -27,7 +27,9 @@ init("APP_ID_HERE", "APP_SECRET_HERE");
 * Optional settings:
 ```
 setProxy("PROXY_ADDRESS_HERE");
-setTimeout(TIMEOUT_HERE);
+setTimeout(TIMEOUT_HERE); /* 0 for no timeout */
+setTLSCAFile("FILE_WITH_TRUSTED_CAS_HERE");
+setTLSCAPath("DIRECTORY_WITH_TRUSTED_CAS_HERE"); /* With hashes generated with c_rehash */
 ```
 
 * If libcurl < 7.32.0, CURLOPT_NOSIGNAL must be set to 1 in multithreaded applications. This causes that the timeout doesn't apply to DNS queries made with the standard resolver.
