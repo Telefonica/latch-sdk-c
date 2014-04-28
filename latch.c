@@ -102,6 +102,7 @@ const char* Host = "https://latch.elevenpaths.com";
 const char* Proxy;
 const char* tlsCAFile = NULL;
 const char* tlsCAPath = NULL;
+const char* tlsCRLFile = NULL;
 
 void init(const char* pAppId, const char* pSecretKey) {
 	AppId = pAppId;
@@ -140,6 +141,11 @@ void setTLSCAFile(const char* pTLSCAFile)
 void setTLSCAPath(const char* pTLSCAPath)
 {
     tlsCAPath = pTLSCAPath;
+}
+
+void setTLSCRLFile(const char* pTLSCRLFile)
+{
+    tlsCRLFile = pTLSCRLFile;
 }
 
 void authenticationHeaders(const char* pHTTPMethod, const char* pQueryString, char* pHeaders[]) {
@@ -251,6 +257,10 @@ char* http_get_proxy(const char* pUrl) {
 	        curl_easy_setopt(pCurl, CURLOPT_CAINFO, NULL);
 	        curl_easy_setopt(pCurl, CURLOPT_CAPATH, tlsCAPath);
 	    }
+	}
+
+	if (tlsCRLFile != NULL) {
+	    curl_easy_setopt(pCurl, CURLOPT_CRLFILE, tlsCRLFile);
 	}
 
 	// synchronous, but we don't really care
