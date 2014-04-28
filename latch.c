@@ -149,9 +149,10 @@ void authenticationHeaders(const char* pHTTPMethod, const char* pQueryString, ch
  * @param pUrl- requested URL including host
  */
 char* http_get_proxy(const char* pUrl) {
+
 	char* headers[2];
 	char* response = malloc(LATCH_BUFFER_SIZE);
-	char* errorResponse = malloc(LATCH_BUFFER_SIZE);
+	char error_message[CURL_ERROR_SIZE];
 	CURL* pCurl = curl_easy_init();
 	int res = -1;
 	int i = 0;
@@ -167,6 +168,9 @@ char* http_get_proxy(const char* pUrl) {
 	for (i=0; i<(sizeof(headers)/sizeof(char*)); i++) {
 		chunk = curl_slist_append(chunk, headers[i]);
 	}
+
+    free(headers[0]);
+    free(headers[1]);
 
 	hostAndUrl = malloc(strlen(Host) + strlen(pUrl) + 1);
 	strcpy(hostAndUrl, Host);
@@ -194,15 +198,17 @@ char* http_get_proxy(const char* pUrl) {
 	curl_easy_setopt(pCurl, CURLOPT_USE_SSL, CURLUSESSL_ALL);
 
 	// error message when curl_easy_perform return non-zero
-	curl_easy_setopt(pCurl, CURLOPT_ERRORBUFFER, errorResponse);
-
+	curl_easy_setopt(pCurl, CURLOPT_ERRORBUFFER, error_message);
 
 	// synchronous, but we don't really care
 	res = curl_easy_perform(pCurl);
 
 	curl_easy_cleanup(pCurl);
+    curl_slist_free_all(chunk);
+    free(hostAndUrl);
 
 	return response;
+
 }
 
 
