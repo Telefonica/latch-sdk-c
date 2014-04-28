@@ -20,6 +20,7 @@
 #include "latch.h"
 
 #define ACCOUNT_ID_MAX_LENGTH 64
+#define OPERATION_ID_MAX_LENGTH 20
 #define TOKEN_MAX_LENGTH 6
 
 /*
@@ -258,13 +259,30 @@ char* status(const char* pAccountId) {
 }
 
 char* operationStatus(const char* pAccountId, const char* pOperationId) {
-	char* url = malloc(strlen(API_CHECK_STATUS_URL) + strlen(pAccountId) + strlen(pOperationId) + 6);
-	strcpy(url, API_CHECK_STATUS_URL);
-	strcat(url, "/");
-	strcat(url, pAccountId);
-	strcat(url, "/op/");
-	strcat(url, pOperationId);
-	return http_get_proxy(url);
+
+    char *response = NULL;
+    char *urlA = NULL;
+    char *urlB = NULL;
+
+    if ((urlA = malloc((strlen(API_CHECK_STATUS_URL) + 1 + strnlen(pAccountId, ACCOUNT_ID_MAX_LENGTH) + 1)*sizeof(char))) == NULL) {
+        return NULL;
+    }
+
+    if ((urlB = malloc((strlen(API_CHECK_STATUS_URL) + 1 + strnlen(pAccountId, ACCOUNT_ID_MAX_LENGTH) + 4 + strnlen(pOperationId, OPERATION_ID_MAX_LENGTH) + 1)*sizeof(char))) == NULL) {
+        free(urlA);
+        return NULL;
+    }
+
+    snprintf(urlA, strlen(API_CHECK_STATUS_URL) + 1 + strnlen(pAccountId, ACCOUNT_ID_MAX_LENGTH) + 1, "%s/%s", API_CHECK_STATUS_URL, pAccountId);
+    snprintf(urlB, strlen(urlA) + 4 + strnlen(pOperationId, OPERATION_ID_MAX_LENGTH) + 1, "%s/op/%s", urlA, pOperationId);
+
+    response = http_get_proxy(urlB);
+
+    free(urlA);
+    free(urlB);
+
+    return response;
+
 }
 
 char* unpair(const char* pAccountId) {
