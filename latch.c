@@ -239,11 +239,22 @@ char* pair(const char* pToken) {
 }
 
 char* status(const char* pAccountId) {
-	char* url = malloc(strlen(API_CHECK_STATUS_URL) + strlen(pAccountId) + 2);
-	strcpy(url, API_CHECK_STATUS_URL);
-	strcat(url, "/");
-	strcat(url, pAccountId);
-	return http_get_proxy(url);
+
+    char *response = NULL;
+    char *url = NULL;
+
+    if ((url = malloc((strlen(API_CHECK_STATUS_URL) + 1 + strnlen(pAccountId, ACCOUNT_ID_MAX_LENGTH) + 1)*sizeof(char))) == NULL) {
+        return NULL;
+    }
+
+    snprintf(url, strlen(API_CHECK_STATUS_URL) + 1 + strnlen(pAccountId, ACCOUNT_ID_MAX_LENGTH) + 1, "%s/%s", API_CHECK_STATUS_URL, pAccountId);
+
+    response = http_get_proxy(url);
+
+    free(url);
+
+    return response;
+
 }
 
 char* operationStatus(const char* pAccountId, const char* pOperationId) {
