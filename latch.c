@@ -20,6 +20,7 @@
 #include "latch.h"
 
 #define ACCOUNT_ID_MAX_LENGTH 64
+#define TOKEN_MAX_LENGTH 6
 
 /*
  * Function to handle stuff from HTTP response.
@@ -219,11 +220,22 @@ char* pairWithId(const char* pAccountId) {
 }
 
 char* pair(const char* pToken) {
-	char* url = malloc(strlen(API_PAIR_URL) + strlen(pToken) + 2);
-	strcpy(url, API_PAIR_URL);
-	strcat(url, "/");
-	strcat(url, pToken);
-	return http_get_proxy(url);
+
+    char *response = NULL;
+    char *url = NULL;
+
+    if ((url = malloc((strlen(API_PAIR_URL) + 1 + strnlen(pToken, TOKEN_MAX_LENGTH) + 1)*sizeof(char))) == NULL) {
+        return NULL;
+    }
+
+    snprintf(url, strlen(API_PAIR_URL) + 1 + strnlen(pToken, TOKEN_MAX_LENGTH) + 1, "%s/%s", API_PAIR_URL, pToken);
+
+    response = http_get_proxy(url);
+
+    free(url);
+
+    return response;
+
 }
 
 char* status(const char* pAccountId) {
