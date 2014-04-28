@@ -26,14 +26,23 @@ init("APP_ID_HERE", "APP_SECRET_HERE");
 
 * Optional settings:
 ```
-setProxy("PROXY_ADDRESS_HERE")
+setProxy("PROXY_ADDRESS_HERE");
+setTimeout(TIMEOUT_HERE); /* 0 for no timeout */
+setTLSCAFile("FILE_WITH_TRUSTED_CAS_HERE");
+setTLSCAPath("DIRECTORY_WITH_TRUSTED_CAS_HERE"); /* With hashes generated with c_rehash */
+setTLSCRLFile("FILE_WITH_CRLS_OF_THE_FULL_CHAIN");
+```
+
+* If libcurl < 7.32.0, CURLOPT_NOSIGNAL must be set to 1 in multithreaded applications. This causes that the timeout doesn't apply to DNS queries made with the standard resolver.
+```
+setNoSignal(1);
 ```
 
 * Call to Latch Server. Pairing will return an account id that you should store for future api calls
 ```
-response = pair("PAIRING_CODE_HERE")
-response = status("ACCOUNT_ID_HERE")
-response = unpair("ACCOUNT_ID_HERE")
+response = pair("PAIRING_CODE_HERE");
+response = status("ACCOUNT_ID_HERE");
+response = unpair("ACCOUNT_ID_HERE");
 ```
 
 * Compile the code with: -lcurl -lcrypto -lssl -ldl

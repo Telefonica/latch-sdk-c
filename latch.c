@@ -17,8 +17,16 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-
 #include "latch.h"
+
+#define ACCOUNT_ID_MAX_LENGTH 64
+#define OPERATION_ID_MAX_LENGTH 20
+#define TOKEN_MAX_LENGTH 6
+
+typedef struct curl_response_buffer {
+  char *buffer;
+  size_t size;
+} curl_response_buffer;
 
 /*
  * Function to handle stuff from HTTP response.
@@ -30,17 +38,18 @@
  * @return Number of bytes actually handled. If different from len * size, curl will throw an error
  */
 static int writeFn(void* buf, size_t len, size_t size, void* userdata) {
-	char *response_ptr =  (char *)userdata;	
-	size_t needed = size * len;
-	
-	if (needed > LATCH_BUFFER_SIZE - 1) {
-		/* Error, we cannot allocate so much info, but we will allocate the info that it fits */
-		memcpy(response_ptr, buf, LATCH_BUFFER_SIZE - 1);
-	} else {
-		memcpy(response_ptr, buf, needed);
-	}
 
-	return needed;
+    size_t realsize = len * size;
+    curl_response_buffer *response = (curl_response_buffer*)userdata;
+
+    response->buffer = realloc(response->buffer, response->size + realsize + 1);
+
+    memcpy(&(response->buffer[response->size]), buf, realsize);
+    response->size += realsize;
+    response->buffer[response->size] = '\0';
+
+    return realsize;
+
 }
 
 /*
@@ -85,11 +94,15 @@ char* sign_data(const char* pSecretKey, const char* pData) {
 	return base64encode(digest, 20);
 }
 
-
+int nosignal = 0;
+int timeout = 2;
 const char* AppId;
 const char* SecretKey;
 const char* Host = "https://latch.elevenpaths.com";
 const char* Proxy;
+const char* tlsCAFile = NULL;
+const char* tlsCAPath = NULL;
+const char* tlsCRLFile = NULL;
 
 void init(const char* pAppId, const char* pSecretKey) {
 	AppId = pAppId;
@@ -107,7 +120,36 @@ void setProxy(const char* pProxy){
 	Proxy = pProxy;
 }
 
+void setTimeout(const int iTimeout)
+{
+    timeout = iTimeout;
+}
+
+/*
+ * If called with iNoSignal 1, CURLOPT_NOSIGNAL will be set to 1
+ */
+void setNoSignal(const int iNoSignal)
+{
+    nosignal = iNoSignal;
+}
+
+void setTLSCAFile(const char* pTLSCAFile)
+{
+    tlsCAFile = pTLSCAFile;
+}
+
+void setTLSCAPath(const char* pTLSCAPath)
+{
+    tlsCAPath = pTLSCAPath;
+}
+
+void setTLSCRLFile(const char* pTLSCRLFile)
+{
+    tlsCRLFile = pTLSCRLFile;
+}
+
 void authenticationHeaders(const char* pHTTPMethod, const char* pQueryString, char* pHeaders[]) {
+
 	char* authHeader, *dateHeader, *stringToSign, *b64hash;
 	char utc[20];
 	time_t timer;
@@ -134,6 +176,10 @@ void authenticationHeaders(const char* pHTTPMethod, const char* pQueryString, ch
 
 	pHeaders[0] = authHeader;
 	pHeaders[1] = dateHeader;
+
+    free(stringToSign);
+    free(b64hash);
+
 }
 
 /*
@@ -141,13 +187,13 @@ void authenticationHeaders(const char* pHTTPMethod, const char* pQueryString, ch
  * @param pUrl- requested URL including host
  */
 char* http_get_proxy(const char* pUrl) {
+
 	char* headers[2];
-	char* response = malloc(LATCH_BUFFER_SIZE);
-	char* errorResponse = malloc(LATCH_BUFFER_SIZE);
+	curl_response_buffer response;
+	char error_message[CURL_ERROR_SIZE];
 	CURL* pCurl = curl_easy_init();
 	int res = -1;
 	int i = 0;
-	int timeOut = 1;	
 	struct curl_slist* chunk = NULL;
 	char* hostAndUrl;
 	
@@ -155,10 +201,17 @@ char* http_get_proxy(const char* pUrl) {
 		return NULL;
 	}
 
+    response.buffer = malloc(1*sizeof(char));
+    response.size = 0;
+    response.buffer[response.size] = '\0';
+
 	authenticationHeaders("GET", pUrl, headers);
 	for (i=0; i<(sizeof(headers)/sizeof(char*)); i++) {
 		chunk = curl_slist_append(chunk, headers[i]);
 	}
+
+    free(headers[0]);
+    free(headers[1]);
 
 	hostAndUrl = malloc(strlen(Host) + strlen(pUrl) + 1);
 	strcpy(hostAndUrl, Host);
@@ -167,76 +220,166 @@ char* http_get_proxy(const char* pUrl) {
 	curl_easy_setopt(pCurl, CURLOPT_URL, hostAndUrl);
 	curl_easy_setopt(pCurl, CURLOPT_HTTPHEADER, chunk);
 	curl_easy_setopt(pCurl, CURLOPT_WRITEFUNCTION, writeFn);
-	curl_easy_setopt(pCurl, CURLOPT_WRITEDATA, response);
+	curl_easy_setopt(pCurl, CURLOPT_WRITEDATA, &response);
 	curl_easy_setopt(pCurl, CURLOPT_NOPROGRESS, 1); // we don't care about progress
 	curl_easy_setopt(pCurl, CURLOPT_FAILONERROR, 1);
 
 	if(Proxy != NULL){
-		curl_easy_setopt(pCurl, CURLOPT_PROXY, Proxy); 
-		timeOut = 2; 
+		curl_easy_setopt(pCurl, CURLOPT_PROXY, Proxy);
 	}
 
 	// we don't want to leave our user waiting at the login prompt forever
-	curl_easy_setopt(pCurl, CURLOPT_TIMEOUT, timeOut);
+	curl_easy_setopt(pCurl, CURLOPT_TIMEOUT, timeout);
 
 	// SSL needs 16k of random stuff. We'll give it some space in RAM.
 	curl_easy_setopt(pCurl, CURLOPT_RANDOM_FILE, "/dev/urandom");
-	curl_easy_setopt(pCurl, CURLOPT_SSL_VERIFYPEER, 0);
+	curl_easy_setopt(pCurl, CURLOPT_SSL_VERIFYPEER, 1);
 	curl_easy_setopt(pCurl, CURLOPT_SSL_VERIFYHOST, 2);
 	curl_easy_setopt(pCurl, CURLOPT_USE_SSL, CURLUSESSL_ALL);
 
 	// error message when curl_easy_perform return non-zero
-	curl_easy_setopt(pCurl, CURLOPT_ERRORBUFFER, errorResponse);
+	curl_easy_setopt(pCurl, CURLOPT_ERRORBUFFER, error_message);
 
+	// Optional if setNoSignal(1)
+	// Avoid crashing if multithread, DNS timeout and libcurl < 7.32.0
+	// Blocks with standard resolver (doesn't apply the timeout)
+
+	if (nosignal == 1) {
+	    curl_easy_setopt(pCurl, CURLOPT_NOSIGNAL, 1);
+	}
+
+	if (tlsCAFile != NULL) {
+	    curl_easy_setopt(pCurl, CURLOPT_CAINFO, tlsCAFile);
+	    curl_easy_setopt(pCurl, CURLOPT_CAPATH, NULL);
+	}
+	else {
+	    if (tlsCAPath != NULL) {
+	        curl_easy_setopt(pCurl, CURLOPT_CAINFO, NULL);
+	        curl_easy_setopt(pCurl, CURLOPT_CAPATH, tlsCAPath);
+	    }
+	}
+
+	if (tlsCRLFile != NULL) {
+	    curl_easy_setopt(pCurl, CURLOPT_CRLFILE, tlsCRLFile);
+	}
 
 	// synchronous, but we don't really care
 	res = curl_easy_perform(pCurl);
 
 	curl_easy_cleanup(pCurl);
+    curl_slist_free_all(chunk);
+    free(hostAndUrl);
 
-	return response;
+    if (res != CURLE_OK) {
+        free(response.buffer);
+        return NULL;
+    }
+    else {
+        return response.buffer;
+    }
+
 }
 
 
 char* pairWithId(const char* pAccountId) {
-	char* url = malloc(strlen(API_PAIR_WITH_ID_URL) + strlen(pAccountId) + 2);
-	strcpy(url, API_PAIR_WITH_ID_URL);
-	strcat(url, "/");
-	strcat(url, pAccountId);
-	return http_get_proxy(url);
+
+    char *response = NULL;
+    char *url = NULL;
+
+    if ((url = malloc((strlen(API_PAIR_WITH_ID_URL) + 1 + strnlen(pAccountId, ACCOUNT_ID_MAX_LENGTH) + 1)*sizeof(char))) == NULL) {
+        return NULL;
+    }
+
+    snprintf(url, strlen(API_PAIR_WITH_ID_URL) + 1 + strnlen(pAccountId, ACCOUNT_ID_MAX_LENGTH) + 1, "%s/%s", API_PAIR_WITH_ID_URL, pAccountId);
+
+    response = http_get_proxy(url);
+
+    free(url);
+
+    return response;
+
 }
 
 char* pair(const char* pToken) {
-	char* url = malloc(strlen(API_PAIR_URL) + strlen(pToken) + 2);
-	strcpy(url, API_PAIR_URL);
-	strcat(url, "/");
-	strcat(url, pToken);
-	return http_get_proxy(url);
+
+    char *response = NULL;
+    char *url = NULL;
+
+    if ((url = malloc((strlen(API_PAIR_URL) + 1 + strnlen(pToken, TOKEN_MAX_LENGTH) + 1)*sizeof(char))) == NULL) {
+        return NULL;
+    }
+
+    snprintf(url, strlen(API_PAIR_URL) + 1 + strnlen(pToken, TOKEN_MAX_LENGTH) + 1, "%s/%s", API_PAIR_URL, pToken);
+
+    response = http_get_proxy(url);
+
+    free(url);
+
+    return response;
+
 }
 
 char* status(const char* pAccountId) {
-	char* url = malloc(strlen(API_CHECK_STATUS_URL) + strlen(pAccountId) + 2);
-	strcpy(url, API_CHECK_STATUS_URL);
-	strcat(url, "/");
-	strcat(url, pAccountId);
-	return http_get_proxy(url);
+
+    char *response = NULL;
+    char *url = NULL;
+
+    if ((url = malloc((strlen(API_CHECK_STATUS_URL) + 1 + strnlen(pAccountId, ACCOUNT_ID_MAX_LENGTH) + 1)*sizeof(char))) == NULL) {
+        return NULL;
+    }
+
+    snprintf(url, strlen(API_CHECK_STATUS_URL) + 1 + strnlen(pAccountId, ACCOUNT_ID_MAX_LENGTH) + 1, "%s/%s", API_CHECK_STATUS_URL, pAccountId);
+
+    response = http_get_proxy(url);
+
+    free(url);
+
+    return response;
+
 }
 
 char* operationStatus(const char* pAccountId, const char* pOperationId) {
-	char* url = malloc(strlen(API_CHECK_STATUS_URL) + strlen(pAccountId) + strlen(pOperationId) + 6);
-	strcpy(url, API_CHECK_STATUS_URL);
-	strcat(url, "/");
-	strcat(url, pAccountId);
-	strcat(url, "/op/");
-	strcat(url, pOperationId);
-	return http_get_proxy(url);
+
+    char *response = NULL;
+    char *urlA = NULL;
+    char *urlB = NULL;
+
+    if ((urlA = malloc((strlen(API_CHECK_STATUS_URL) + 1 + strnlen(pAccountId, ACCOUNT_ID_MAX_LENGTH) + 1)*sizeof(char))) == NULL) {
+        return NULL;
+    }
+
+    if ((urlB = malloc((strlen(API_CHECK_STATUS_URL) + 1 + strnlen(pAccountId, ACCOUNT_ID_MAX_LENGTH) + 4 + strnlen(pOperationId, OPERATION_ID_MAX_LENGTH) + 1)*sizeof(char))) == NULL) {
+        free(urlA);
+        return NULL;
+    }
+
+    snprintf(urlA, strlen(API_CHECK_STATUS_URL) + 1 + strnlen(pAccountId, ACCOUNT_ID_MAX_LENGTH) + 1, "%s/%s", API_CHECK_STATUS_URL, pAccountId);
+    snprintf(urlB, strlen(urlA) + 4 + strnlen(pOperationId, OPERATION_ID_MAX_LENGTH) + 1, "%s/op/%s", urlA, pOperationId);
+
+    response = http_get_proxy(urlB);
+
+    free(urlA);
+    free(urlB);
+
+    return response;
+
 }
 
 char* unpair(const char* pAccountId) {
-	char* url = malloc(strlen(API_UNPAIR_URL) + strlen(pAccountId) + 2);
-	strcpy(url, API_UNPAIR_URL);
-	strcat(url, "/");
-	strcat(url, pAccountId);
-	//printf("%s\n\n", url);
-	return http_get_proxy(url);
+
+    char *response = NULL;
+    char *url = NULL;
+
+    if ((url = malloc((strlen(API_UNPAIR_URL) + 1 + strnlen(pAccountId, ACCOUNT_ID_MAX_LENGTH) + 1)*sizeof(char))) == NULL) {
+        return NULL;
+    }
+
+    snprintf(url, strlen(API_UNPAIR_URL) + 1 + strnlen(pAccountId, ACCOUNT_ID_MAX_LENGTH) + 1, "%s/%s", API_UNPAIR_URL, pAccountId);
+
+    response = http_get_proxy(url);
+
+    free(url);
+
+    return response;
+
 }
