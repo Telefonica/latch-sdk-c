@@ -286,10 +286,20 @@ char* operationStatus(const char* pAccountId, const char* pOperationId) {
 }
 
 char* unpair(const char* pAccountId) {
-	char* url = malloc(strlen(API_UNPAIR_URL) + strlen(pAccountId) + 2);
-	strcpy(url, API_UNPAIR_URL);
-	strcat(url, "/");
-	strcat(url, pAccountId);
-	//printf("%s\n\n", url);
-	return http_get_proxy(url);
+
+    char *response = NULL;
+    char *url = NULL;
+
+    if ((url = malloc((strlen(API_UNPAIR_URL) + 1 + strnlen(pAccountId, ACCOUNT_ID_MAX_LENGTH) + 1)*sizeof(char))) == NULL) {
+        return NULL;
+    }
+
+    snprintf(url, strlen(API_UNPAIR_URL) + 1 + strnlen(pAccountId, ACCOUNT_ID_MAX_LENGTH) + 1, "%s/%s", API_UNPAIR_URL, pAccountId);
+
+    response = http_get_proxy(url);
+
+    free(url);
+
+    return response;
+
 }
