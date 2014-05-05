@@ -115,7 +115,7 @@ void authenticationHeaders(const char* pHTTPMethod, const char* pQueryString, ch
 	int len = 0;
 
 	time(&timer);
-	tm_info = localtime(&timer);
+	tm_info = gmtime(&timer);
 	strftime(utc, 20, UTC_STRING_FORMAT, tm_info);
 
 	len = strlen(pHTTPMethod) + strlen(utc) + strlen(pQueryString) + 4;
