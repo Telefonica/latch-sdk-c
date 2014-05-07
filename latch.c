@@ -153,12 +153,12 @@ void authenticationHeaders(const char* pHTTPMethod, const char* pQueryString, ch
 	char* authHeader, *dateHeader, *stringToSign, *b64hash;
 	char utc[20];
 	time_t timer;
-	struct tm* tm_info;
+	struct tm tm_info;
 	int len = 0;
 
 	time(&timer);
-	tm_info = gmtime(&timer);
-	strftime(utc, 20, UTC_STRING_FORMAT, tm_info);
+	gmtime_r(&timer, &tm_info);
+	strftime(utc, 20, UTC_STRING_FORMAT, &tm_info);
 
 	len = strlen(pHTTPMethod) + strlen(utc) + strlen(pQueryString) + 4;
 	stringToSign = malloc(len);
