@@ -280,6 +280,69 @@ char* http_get_proxy(const char* pUrl) {
 
 }
 
+char* buildURLWithAccountId(const char* pBase, const char* pAccountId) {
+
+    char* rv = NULL;
+
+    if (pBase != NULL && pAccountId != NULL) {
+        if ((rv = malloc((strlen(pBase) + 1 + strnlen(pAccountId, ACCOUNT_ID_MAX_LENGTH) + 1) * sizeof(char))) != NULL) {
+            snprintf(rv, strlen(pBase) + 1 + strnlen(pAccountId, ACCOUNT_ID_MAX_LENGTH) + 1, "%s/%s", pBase, pAccountId);
+        }
+    }
+
+    return rv;
+
+}
+
+char* buildURLWithAccountIdAndOperationId(const char* pBase, const char* pAccountId, const char* pOperationId) {
+
+    char *urlA = NULL;
+    char *urlB = NULL;
+
+    if (pBase != NULL && pAccountId != NULL && pOperationId != NULL) {
+
+        urlA = buildURLWithAccountId(pBase, pAccountId);
+
+        if (urlA != NULL) {
+
+            if ((urlB = malloc((strlen(urlA) + 4 + strnlen(pOperationId, OPERATION_ID_MAX_LENGTH) + 1) * sizeof(char))) != NULL) {
+                snprintf(urlB, strlen(urlA) + 4 + strnlen(pOperationId, OPERATION_ID_MAX_LENGTH) + 1, "%s/op/%s", urlA, pOperationId);
+            }
+
+            free(urlA);
+
+        }
+
+    }
+
+    return urlB;
+
+}
+
+char* buildURLWithAccountIdAndFromAndTo(const char* pBase, const char* pAccountId, time_t from, time_t to) {
+
+    char *urlA = NULL;
+    char *urlB = NULL;
+
+    if (pBase != NULL && pAccountId != NULL) {
+
+        urlA = buildURLWithAccountId(pBase, pAccountId);
+
+        if (urlA != NULL) {
+
+            if ((urlB = malloc((strlen(urlA) + 1 + 13 + 1 + 13 + 1) * sizeof(char))) != NULL) {
+                snprintf(urlB, strlen(urlA) + 1 + 13 + 1 + 13 + 1, "%s/%d000/%d000", urlA, from, to);
+            }
+
+            free(urlA);
+
+        }
+
+    }
+
+    return urlB;
+
+}
 
 char* pairWithId(const char* pAccountId) {
 
@@ -382,4 +445,120 @@ char* unpair(const char* pAccountId) {
 
     return response;
 
+}
+
+char* lock(const char* pAccountId) {
+
+    char *response = NULL;
+    char *url = NULL;
+
+    if (pAccountId != NULL) {
+
+        url = buildURLWithAccountId(API_LOCK_URL, pAccountId);
+
+        if (url != NULL) {
+            response = http_get_proxy(url);
+            free(url);
+        }
+    }
+
+    return response;
+
+}
+
+char* operationLock(const char* pAccountId, const char* pOperationId) {
+
+    char *response = NULL;
+    char *url = NULL;
+
+    if (pAccountId != NULL && pOperationId != NULL) {
+
+        url = buildURLWithAccountIdAndOperationId(API_LOCK_URL, pAccountId, pOperationId);
+
+        if (url != NULL) {
+            response = http_get_proxy(url);
+            free(url);
+        }
+
+    }
+
+    return response;
+
+}
+
+char* unlock(const char* pAccountId) {
+
+    char *response = NULL;
+    char *url = NULL;
+
+    if (pAccountId != NULL) {
+
+        url = buildURLWithAccountId(API_UNLOCK_URL, pAccountId);
+
+        if (url != NULL) {
+            response = http_get_proxy(url);
+            free(url);
+        }
+    }
+
+    return response;
+
+}
+
+char* operationUnlock(const char* pAccountId, const char* pOperationId) {
+
+    char *response = NULL;
+    char *url = NULL;
+
+    if (pAccountId != NULL && pOperationId != NULL) {
+
+        url = buildURLWithAccountIdAndOperationId(API_UNLOCK_URL, pAccountId, pOperationId);
+
+        if (url != NULL) {
+            response = http_get_proxy(url);
+            free(url);
+        }
+
+    }
+
+    return response;
+
+}
+
+char* history(const char* pAccountId) {
+
+    char *response = NULL;
+    char *url = NULL;
+
+    if (pAccountId != NULL) {
+
+        url = buildURLWithAccountId(API_HISTORY_URL, pAccountId);
+
+        if (url != NULL) {
+            response = http_get_proxy(url);
+            free(url);
+        }
+    }
+
+    return response;
+
+}
+
+char* timePeriodHistory(const char* pAccountId, time_t from, time_t to) {
+
+    char *response = NULL;
+    char *url = NULL;
+
+    if (pAccountId != NULL) {
+
+        url = buildURLWithAccountIdAndFromAndTo(API_HISTORY_URL, pAccountId, from, to);
+
+        if (url != NULL) {
+            response = http_get_proxy(url);
+            free(url);
+        }
+
+    }
+
+    return response;
 }

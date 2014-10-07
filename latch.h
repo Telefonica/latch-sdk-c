@@ -43,6 +43,9 @@
 #define API_PAIR_URL "/api/0.6/pair"
 #define API_PAIR_WITH_ID_URL "/api/0.6/pairWithId"
 #define API_UNPAIR_URL "/api/0.6/unpair"
+#define API_LOCK_URL "/api/0.6/lock"
+#define API_UNLOCK_URL "/api/0.6/unlock"
+#define API_HISTORY_URL "/api/0.6/history"
 
 void init(const char*, const char*);
 void setHost(const char*);
@@ -57,3 +60,9 @@ char* pair(const char*);
 char* status(const char*);
 char* operationStatus(const char*, const char*);
 char* unpair(const char*);
+char* lock(const char*);
+char* operationLock(const char*, const char*);
+char* unlock(const char*);
+char* operationUnlock(const char*, const char*);
+char* history(const char*);
+char* timePeriodHistory(const char*, time_t, time_t);
