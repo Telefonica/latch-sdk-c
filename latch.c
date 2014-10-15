@@ -17,6 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
+#include <stdarg.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -274,7 +275,7 @@ char* http_proxy(const char* pMethod, const char* pUrl, const char* pBody) {
 	int i = 0;
 	struct curl_slist* chunk = NULL;
 	char* hostAndUrl;
-	
+
 	if (!pCurl) {
 		return NULL;
 	}
@@ -367,18 +368,24 @@ char* http_proxy(const char* pMethod, const char* pUrl, const char* pBody) {
 
 }
 
-char* buildURLWithOneParameter(const char* pBase, const char* pParameter) {
+char* build_string(int argc, char** argv) {
 
-    char* rv = NULL;
-    char* encodedParameter = NULL;
+    int i = 0;
+    int len = 1;
+    char *rv = NULL;
 
-    if (pBase != NULL && pParameter != NULL) {
-        encodedParameter = urlEncode(pParameter, 0);
-        if (pParameter != NULL) {
-            if ((rv = malloc((strlen(pBase) + 1 + strlen(encodedParameter) + 1) * sizeof(char))) != NULL) {
-                snprintf(rv, strlen(pBase) + 1 + strlen(encodedParameter) + 1, "%s/%s", pBase, encodedParameter);
+    for (i = 0; i < argc; i++) {
+        if (argv[i] != NULL) {
+            len += strlen(argv[i]);
+        }
+    }
+
+    if ((rv = (char *) malloc(len)) != NULL) {
+        *rv = '\0';
+        for (i = 0; i < argc; i++) {
+            if (argv[i] != NULL) {
+                strncat(rv, argv[i], strlen(argv[i]));
             }
-            free(encodedParameter);
         }
     }
 
@@ -386,137 +393,135 @@ char* buildURLWithOneParameter(const char* pBase, const char* pParameter) {
 
 }
 
-char* buildURLWithTwoParameters(const char* pBase, const char* pParameter1, const char* pSeparator, const char* pParameter2) {
+char* build_url(int argc, ...) {
 
-    char *urlA = NULL;
-    char *urlB = NULL;
-    char *encodedParameter2 = NULL;
+    int i = 0;
+    char *tokens[2 * argc - 1];
+    va_list args;
 
-    if (pBase != NULL && pParameter1 != NULL && pParameter2 != NULL) {
-        urlA = buildURLWithOneParameter(pBase, pParameter1);
-        if (urlA != NULL) {
-            encodedParameter2 = urlEncode(pParameter2, 0);
-            if (encodedParameter2 != NULL) {
-                if ((urlB = malloc((strlen(urlA) + 1 + strlen(pSeparator) + 1 + strlen(encodedParameter2) + 1) * sizeof(char))) != NULL) {
-                    snprintf(urlB, strlen(urlA) + 1 + strlen(pSeparator) + 1 + strlen(encodedParameter2) + 1, "%s/%s/%s", urlA, pSeparator, encodedParameter2);
-                }
-                free(encodedParameter2);
+    va_start(args, argc);
+    for (i = 0; i < 2 * argc - 1; i = i + 2) {
+        tokens[i] = va_arg(args, char*);
+        if (i < 2 * argc - 1) {
+            if (tokens[i] == NULL) {
+                tokens[i + 1] = NULL;
+            } else {
+                tokens[i + 1] = "/";
             }
-            free(urlA);
         }
     }
+    va_end(args);
 
-    return urlB;
+    return build_string(2 * argc - 1, tokens);
 
 }
 
-char* buildURLWithAccountIdAndFromAndTo(const char* pBase, const char* pAccountId, time_t from, time_t to) {
+char* build_url_v(int argc, va_list args) {
 
-    char *urlA = NULL;
-    char *urlB = NULL;
+    int i = 0;
+    char *tokens[2 * argc - 1];
 
-    if (pBase != NULL && pAccountId != NULL) {
-        urlA = buildURLWithOneParameter(pBase, pAccountId);
-        if (urlA != NULL) {
-            if ((urlB = malloc((strlen(urlA) + 1 + 13 + 1 + 13 + 1) * sizeof(char))) != NULL) {
-                snprintf(urlB, strlen(urlA) + 1 + 13 + 1 + 13 + 1, "%s/%d000/%d000", urlA, from, to);
+    for (i = 0; i < 2 * argc - 1; i = i + 2) {
+        tokens[i] = va_arg(args, char*);
+        if (i < 2 * argc - 1) {
+            if (tokens[i] == NULL) {
+                tokens[i + 1] = NULL;
+            } else {
+                tokens[i + 1] = "/";
             }
-            free(urlA);
         }
     }
 
-    return urlB;
+    return build_string(2 * argc - 1, tokens);
 
 }
 
-char* oneParameterOperation(const char* pBase, const char* pParameter, const char* pMethod) {
+char* operation(const char* pMethod, int argc, ...) {
 
+    int i = 0;
+    int valid = 1;
     char *response = NULL;
     char *url = NULL;
+    va_list args;
 
-    if (pParameter != NULL) {
-        url = buildURLWithOneParameter(pBase, pParameter);
-        if (url != NULL) {
-            response = http_proxy(pMethod, url, NULL);
-            free(url);
+    va_start(args, argc);
+    for (i = 0; i < argc; i++) {
+        if (va_arg(args, char*) == NULL) {
+            valid = 0;
         }
     }
+    va_end(args);
 
-    return response;
-
-}
-
-char* twoParameterOperation(const char* pBase, const char* pParameter1, const char* pSeparator, const char* pParameter2, const char* pMethod) {
-
-    char *response = NULL;
-    char *url = NULL;
-
-    if (pParameter1 != NULL && pParameter2 != NULL) {
-        url = buildURLWithTwoParameters(pBase, pParameter1, pSeparator, pParameter2);
-        if (url != NULL) {
-            response = http_proxy(pMethod, url, NULL);
-            free(url);
-        }
+    va_start(args, argc);
+    if (valid && ((url = build_url_v(argc, args)) != NULL)) {
+        response = http_proxy(pMethod, url, NULL);
+        free(url);
     }
+    va_end(args);
 
     return response;
 
 }
 
 char* pairWithId(const char* pAccountId) {
-    return oneParameterOperation(API_PAIR_WITH_ID_URL, pAccountId, HTTP_METHOD_GET);
+    return operation(HTTP_METHOD_GET, 2, API_PAIR_WITH_ID_URL, pAccountId);
 }
 
 char* pair(const char* pToken) {
-    return oneParameterOperation(API_PAIR_URL, pToken, HTTP_METHOD_GET);
+    return operation(HTTP_METHOD_GET, 2, API_PAIR_URL, pToken);
 }
 
 char* status(const char* pAccountId) {
-    return oneParameterOperation(API_CHECK_STATUS_URL, pAccountId, HTTP_METHOD_GET);
+    return operation(HTTP_METHOD_GET, 2, API_CHECK_STATUS_URL, pAccountId);
 }
 
 char* operationStatus(const char* pAccountId, const char* pOperationId) {
-    return twoParameterOperation(API_CHECK_STATUS_URL, pAccountId, "op", pOperationId, HTTP_METHOD_GET);
+    return operation(HTTP_METHOD_GET, 4, API_CHECK_STATUS_URL, pAccountId, "op", pOperationId);
 }
 
 char* unpair(const char* pAccountId) {
-    return oneParameterOperation(API_UNPAIR_URL, pAccountId, HTTP_METHOD_GET);
+    return operation(HTTP_METHOD_GET, 2, API_UNPAIR_URL, pAccountId);
 }
 
 char* lock(const char* pAccountId) {
-    return oneParameterOperation(API_LOCK_URL, pAccountId, HTTP_METHOD_POST);
+    return operation(HTTP_METHOD_POST, 2, API_LOCK_URL, pAccountId);
 }
 
 char* operationLock(const char* pAccountId, const char* pOperationId) {
-    return twoParameterOperation(API_LOCK_URL, pAccountId, "op", pOperationId, HTTP_METHOD_POST);
+    return operation(HTTP_METHOD_POST, 4, API_LOCK_URL, pAccountId, "op", pOperationId);
 }
 
 char* unlock(const char* pAccountId) {
-    return oneParameterOperation(API_UNLOCK_URL, pAccountId, HTTP_METHOD_POST);
+    return operation(HTTP_METHOD_POST, 2, API_UNLOCK_URL, pAccountId);
 }
 
 char* operationUnlock(const char* pAccountId, const char* pOperationId) {
-    return twoParameterOperation(API_UNLOCK_URL, pAccountId, "op", pOperationId, HTTP_METHOD_POST);
+    return operation(HTTP_METHOD_POST, 4, API_UNLOCK_URL, pAccountId, "op", pOperationId);
 }
 
 char* history(const char* pAccountId) {
-    return oneParameterOperation(API_HISTORY_URL, pAccountId, HTTP_METHOD_GET);
+    return operation(HTTP_METHOD_GET, 2, API_HISTORY_URL, pAccountId);
 }
 
 char* timePeriodHistory(const char* pAccountId, time_t from, time_t to) {
 
-    char *response = NULL;
-    char *url = NULL;
+    char sFrom[14];
+    char sTo[14];
 
-    if (pAccountId != NULL) {
-        url = buildURLWithAccountIdAndFromAndTo(API_HISTORY_URL, pAccountId, from, to);
-        if (url != NULL) {
-            response = http_proxy(HTTP_METHOD_GET, url, NULL);
-            free(url);
-        }
+    if (from == 0) {
+        snprintf(sFrom, 14, "%d", from);
+    } else {
+        snprintf(sFrom, 14, "%d000", from);
     }
 
-    return response;
+    if (to == 0) {
+        snprintf(sTo, 14, "%d", to);
+    } else {
+        snprintf(sTo, 14, "%d000", to);
+    }
+
+    return operation(HTTP_METHOD_GET, 4, API_HISTORY_URL, pAccountId, sFrom, sTo);
+
 }
 
 char* operationCreate(const char* pParentId, const char* pName, const char* pTwoFactor, const char* pLockOnRequest) {
@@ -629,7 +634,7 @@ char* operationUpdate(const char* pOperationId, const char* pName, const char* p
             encodedLockOnRequest = urlEncode(pLockOnRequest, 1);
         }
 
-        url = buildURLWithOneParameter(API_OPERATION_URL, encodedOperationId);
+        url = build_url(2, API_OPERATION_URL, encodedOperationId);
 
         if (pLockOnRequest != NULL) {
             bodyLength += strlen(HTTP_PARAM_LOCK_ON_REQUEST) + 1 + strlen(encodedLockOnRequest); /* name=value */
@@ -696,5 +701,9 @@ char* operationUpdate(const char* pOperationId, const char* pName, const char* p
 }
 
 char* operationRemove(const char* pOperationId) {
-    return oneParameterOperation(API_OPERATION_URL, pOperationId, HTTP_METHOD_DELETE);
+    return operation(HTTP_METHOD_DELETE, 2, API_OPERATION_URL, pOperationId);
+}
+
+char* operationsGet() {
+    return operation(HTTP_METHOD_GET, 1, API_OPERATION_URL);
 }

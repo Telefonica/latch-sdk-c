@@ -43,5 +43,6 @@ char* timePeriodHistory(const char*, time_t, time_t);
 char* operationCreate(const char*, const char*, const char*, const char*);
 char* operationUpdate(const char*, const char*, const char*, const char*);
 char* operationRemove(const char*);
+char* operationsGet();
 
 #endif /* __LATCH_H__ */
