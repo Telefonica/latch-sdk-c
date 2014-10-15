@@ -304,7 +304,7 @@ char* http_proxy(const char* pMethod, const char* pUrl, const char* pBody) {
 
 	curl_easy_setopt(pCurl, CURLOPT_CUSTOMREQUEST, pMethod);
 
-	if (strcmp(pMethod, HTTP_METHOD_POST) == 0 || strcmp(pMethod, HTTP_METHOD_PUT)) {
+	if ((strcmp(pMethod, HTTP_METHOD_POST) == 0) || (strcmp(pMethod, HTTP_METHOD_PUT) == 0)) {
 	    curl_easy_setopt(pCurl, CURLOPT_POSTFIELDS, pBody);
 	    if (pBody == NULL) {
 	        curl_easy_setopt(pCurl, CURLOPT_POSTFIELDSIZE, 0);
