@@ -304,8 +304,11 @@ char* http_proxy(const char* pMethod, const char* pUrl, const char* pBody) {
 
 	curl_easy_setopt(pCurl, CURLOPT_CUSTOMREQUEST, pMethod);
 
-	if ((strcmp(pMethod, HTTP_METHOD_POST) == 0 || strcmp(pMethod, HTTP_METHOD_PUT) == 0) && pBody != NULL) {
+	if (strcmp(pMethod, HTTP_METHOD_POST) == 0 || strcmp(pMethod, HTTP_METHOD_PUT)) {
 	    curl_easy_setopt(pCurl, CURLOPT_POSTFIELDS, pBody);
+	    if (pBody == NULL) {
+	        curl_easy_setopt(pCurl, CURLOPT_POSTFIELDSIZE, 0);
+	    }
 	}
 
 	if(Proxy != NULL){
@@ -481,19 +484,19 @@ char* unpair(const char* pAccountId) {
 }
 
 char* lock(const char* pAccountId) {
-    return oneParameterOperation(API_LOCK_URL, pAccountId, HTTP_METHOD_GET);
+    return oneParameterOperation(API_LOCK_URL, pAccountId, HTTP_METHOD_POST);
 }
 
 char* operationLock(const char* pAccountId, const char* pOperationId) {
-    return twoParameterOperation(API_LOCK_URL, pAccountId, "op", pOperationId, HTTP_METHOD_GET);
+    return twoParameterOperation(API_LOCK_URL, pAccountId, "op", pOperationId, HTTP_METHOD_POST);
 }
 
 char* unlock(const char* pAccountId) {
-    return oneParameterOperation(API_UNLOCK_URL, pAccountId, HTTP_METHOD_GET);
+    return oneParameterOperation(API_UNLOCK_URL, pAccountId, HTTP_METHOD_POST);
 }
 
 char* operationUnlock(const char* pAccountId, const char* pOperationId) {
-    return twoParameterOperation(API_UNLOCK_URL, pAccountId, "op", pOperationId, HTTP_METHOD_GET);
+    return twoParameterOperation(API_UNLOCK_URL, pAccountId, "op", pOperationId, HTTP_METHOD_POST);
 }
 
 char* history(const char* pAccountId) {
