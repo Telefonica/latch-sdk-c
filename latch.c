@@ -627,6 +627,10 @@ char* operationRemove(const char* pOperationId) {
     return operation(HTTP_METHOD_DELETE, 0, NULL, 2, API_OPERATION_URL, pOperationId);
 }
 
+char* operationsGet(const char* pOperationId) {
+    return operation(HTTP_METHOD_GET, 0, NULL, 2, API_OPERATION_URL, pOperationId);
+}
+
 char* operationsGet() {
     return operation(HTTP_METHOD_GET, 0, NULL, 1, API_OPERATION_URL);
 }
