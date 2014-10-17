@@ -310,7 +310,7 @@ char* http_proxy(const char* pMethod, const char* pUrl, const char* pBody) {
 
 	curl_easy_setopt(pCurl, CURLOPT_CUSTOMREQUEST, pMethod);
 
-	if ((strcmp(pMethod, HTTP_METHOD_POST) == 0) || (strcmp(pMethod, HTTP_METHOD_PUT) == 0)) {
+	if ((strncmp(pMethod, HTTP_METHOD_POST, strlen(HTTP_METHOD_POST)) == 0) || (strncmp(pMethod, HTTP_METHOD_PUT, strlen(HTTP_METHOD_PUT)) == 0)) {
 	    curl_easy_setopt(pCurl, CURLOPT_POSTFIELDS, pBody);
 	    if (pBody == NULL) {
 	        curl_easy_setopt(pCurl, CURLOPT_POSTFIELDSIZE, 0);
@@ -627,7 +627,7 @@ char* operationRemove(const char* pOperationId) {
     return operation(HTTP_METHOD_DELETE, 0, NULL, 2, API_OPERATION_URL, pOperationId);
 }
 
-char* operationsGet(const char* pOperationId) {
+char* operationGet(const char* pOperationId) {
     return operation(HTTP_METHOD_GET, 0, NULL, 2, API_OPERATION_URL, pOperationId);
 }
 
