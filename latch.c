@@ -17,6 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
+#include <ctype.h>
 #include <stdarg.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -553,15 +554,15 @@ char* timePeriodHistory(const char* pAccountId, time_t from, time_t to) {
     char sTo[14];
 
     if (from == 0) {
-        snprintf(sFrom, 14, "%d", from);
+        snprintf(sFrom, 14, "%d", (int)from);
     } else {
-        snprintf(sFrom, 14, "%d000", from);
+        snprintf(sFrom, 14, "%d000", (int)from);
     }
 
     if (to == 0) {
-        snprintf(sTo, 14, "%d", to);
+        snprintf(sTo, 14, "%d", (int)to);
     } else {
-        snprintf(sTo, 14, "%d000", to);
+        snprintf(sTo, 14, "%d000", (int)to);
     }
 
     return operation(HTTP_METHOD_GET, 0, NULL, 4, API_HISTORY_URL, pAccountId, sFrom, sTo);
