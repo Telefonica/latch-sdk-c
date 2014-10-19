@@ -554,15 +554,15 @@ char* timePeriodHistory(const char* pAccountId, time_t from, time_t to) {
     char sTo[14];
 
     if (from == 0) {
-        snprintf(sFrom, 14, "%d", (int)from);
+        snprintf(sFrom, 14, "%lld", (long long)from);
     } else {
-        snprintf(sFrom, 14, "%d000", (int)from);
+        snprintf(sFrom, 14, "%lld000", (long long)from);
     }
 
     if (to == 0) {
-        snprintf(sTo, 14, "%d", (int)to);
+        snprintf(sTo, 14, "%lld", (long long)to);
     } else {
-        snprintf(sTo, 14, "%d000", (int)to);
+        snprintf(sTo, 14, "%lld000", (long long)to);
     }
 
     return operation(HTTP_METHOD_GET, 0, NULL, 4, API_HISTORY_URL, pAccountId, sFrom, sTo);
