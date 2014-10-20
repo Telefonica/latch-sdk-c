@@ -403,11 +403,16 @@ char* build_url(int argc, ...) {
 
     int i = 0;
     char *tokens[2 * argc - 1];
+    char *response = NULL;
     va_list args;
 
     va_start(args, argc);
     for (i = 0; i < 2 * argc - 1; i = i + 2) {
-        tokens[i] = va_arg(args, char*);
+        if (i == 0) {
+            tokens[i] = va_arg(args, char*);
+        } else {
+            tokens[i] = urlEncode(va_arg(args, char*), 0);
+        }
         if (i < 2 * argc - 1) {
             if (tokens[i] == NULL) {
                 tokens[i + 1] = NULL;
@@ -418,7 +423,15 @@ char* build_url(int argc, ...) {
     }
     va_end(args);
 
-    return build_string(2 * argc - 1, tokens);
+    response = build_string(2 * argc - 1, tokens);
+
+    for (i = 0; i < 2 * argc - 1; i = i + 2) {
+        if (i != 0) {
+            free(tokens[i]);
+        }
+    }
+
+    return response;
 
 }
 
@@ -426,9 +439,14 @@ char* build_url_v(int argc, va_list args) {
 
     int i = 0;
     char *tokens[2 * argc - 1];
+    char *response = NULL;
 
     for (i = 0; i < 2 * argc - 1; i = i + 2) {
-        tokens[i] = va_arg(args, char*);
+        if (i == 0) {
+            tokens[i] = va_arg(args, char*);
+        } else {
+            tokens[i] = urlEncode(va_arg(args, char*), 0);
+        }
         if (i < 2 * argc - 1) {
             if (tokens[i] == NULL) {
                 tokens[i + 1] = NULL;
@@ -438,7 +456,15 @@ char* build_url_v(int argc, va_list args) {
         }
     }
 
-    return build_string(2 * argc - 1, tokens);
+    response = build_string(2 * argc - 1, tokens);
+
+    for (i = 0; i < 2 * argc - 1; i = i + 2) {
+        if (i != 0) {
+            free(tokens[i]);
+        }
+    }
+
+    return response;
 
 }
 
