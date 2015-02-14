@@ -20,6 +20,8 @@
 #ifndef __LATCH_H__
 #define __LATCH_H__
 
+#include <time.h>
+
 void init(const char*, const char*);
 void setHost(const char*);
 void setProxy(const char*);
