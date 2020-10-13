@@ -17,8 +17,8 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#ifndef __LATCH_H__
-#define __LATCH_H__
+#ifndef LATCH_H_
+#define LATCH_H_
 
 #include <time.h>
 
@@ -48,4 +48,4 @@ char* operationRemove(const char*);
 char* operationGet(const char*);
 char* operationsGet();
 
-#endif /* __LATCH_H__ */
+#endif /* LATCH_H_ */
