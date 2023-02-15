@@ -1,6 +1,6 @@
 /*
  * This library implements all functions of Latch API.
- * Copyright (C) 2013 Eleven Paths
+ * Copyright (C) 2023 Telefonica Digital
 
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -173,7 +173,7 @@ int nosignal = 0;
 int timeout = 2;
 const char* AppId;
 const char* SecretKey;
-const char* Host = "https://latch.elevenpaths.com";
+const char* Host = "https://latch.telefonica.com";
 const char* Proxy;
 const char* tlsCAFile = NULL;
 const char* tlsCAPath = NULL;
