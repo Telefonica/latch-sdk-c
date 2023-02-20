@@ -10,7 +10,7 @@ int main()
 
 	init(AppId, SecretKey);
 
-	char *responsePairId, *responsePair, *responseStatus, responseUnpair, responseLock, responseUnlock;
+	char *responsePairId, *responsePair, *responseStatus, *responseUnpair, *responseLock, *responseUnlock;
 
 	responsePairId = pairWithId("test@email.com");
 
@@ -35,11 +35,6 @@ int main()
 	responseUnpair = unpair("accountId");
 
 	printf("%s\n", responseUnpair);
-
-
-
-
-
 
 	return 0;
 }
