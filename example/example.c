@@ -10,7 +10,7 @@ int main()
 	const char *ClientWallet = "CLIENT_WALLET";
 	const char *ClientSignature = "CLIENT_SIGNATURE";
 	const char *AccountId = "ACCOUNT_ID";
-	const char *OperationId = "	OPERATION_ID";
+	const char *OperationId = "OPERATION_ID";
 	const char *AccountNameId = "account@email.com";
 
 	init(AppId, SecretKey);
